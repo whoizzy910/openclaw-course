@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 const modules = [
-  { emoji: "🦞", title: "What OpenClaw Actually Is", duration: "10 min", color: "#FF6B35" },
+  { emoji: "🦞", title: "What OpenClaw Actually Is", duration: "10 min", color: "#C8602A" },
   { emoji: "⚙️", title: "Installation & First Run", duration: "12 min", color: "#4ECDC4" },
   { emoji: "🧠", title: "Crafting Your SOUL.md", duration: "15 min", color: "#A855F7" },
   { emoji: "💾", title: "Memory & HEARTBEAT Mastery", duration: "15 min", color: "#F59E0B" },
@@ -18,10 +18,22 @@ const quotes = [
   { text: "This is the best 'morning briefing' interface I've seen.", handle: "@aaronmakelky" },
 ];
 
-export default function LandingPage({ onEnter }) {
+export default function LandingPage({ onEnter, theme = "dark", onToggleTheme }) {
   const [scrolled, setScrolled] = useState(false);
   const [quoteIdx, setQuoteIdx] = useState(0);
   const [visible, setVisible] = useState(true);
+
+  const isDark = theme === "dark";
+  const colors = {
+    bg: isDark ? "#111318" : "#F5F3EF",
+    bgCard: isDark ? "#1a1d24" : "#EDEAE4",
+    bgNav: isDark ? "rgba(17,19,24,0.95)" : "rgba(245,243,239,0.95)",
+    text: isDark ? "#ECEEF4" : "#1A1C24",
+    textMuted: isDark ? "#9CA0B0" : "#5A5E70",
+    textDim: isDark ? "#6E7380" : "#8A8E9E",
+    border: isDark ? "#252830" : "#D8D4CC",
+    accent: "#C8602A",
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -41,7 +53,7 @@ export default function LandingPage({ onEnter }) {
   }, []);
 
   return (
-    <div style={{ fontFamily: "'Georgia', serif", background: "#080808", color: "#E8E0D0", minHeight: "100vh" }}>
+    <div style={{ fontFamily: "'Georgia', serif", background: colors.bg, color: colors.text, minHeight: "100vh" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@400;500&display=swap');
 
@@ -49,8 +61,8 @@ export default function LandingPage({ onEnter }) {
         html { scroll-behavior: smooth; }
 
         ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-track { background: #080808; }
-        ::-webkit-scrollbar-thumb { background: #FF6B35; }
+        ::-webkit-scrollbar-track { background: #111318; }
+        ::-webkit-scrollbar-thumb { background: #C8602A; }
 
         .nav {
           position: fixed; top: 0; left: 0; right: 0; z-index: 100;
@@ -61,19 +73,19 @@ export default function LandingPage({ onEnter }) {
         .nav.scrolled {
           background: rgba(8,8,8,0.95);
           backdrop-filter: blur(12px);
-          border-bottom: 1px solid #1a1a1a;
+          border-bottom: 1px solid #252830;
           padding: 14px 48px;
         }
         .nav-logo {
           font-family: 'Playfair Display', serif;
           font-size: 20px;
           font-weight: 900;
-          color: #FF6B35;
+          color: #C8602A;
           letter-spacing: -0.5px;
         }
         .nav-cta {
-          background: #FF6B35;
-          color: #080808;
+          background: #C8602A;
+          color: #111318;
           border: none;
           padding: 10px 22px;
           font-family: 'DM Mono', monospace;
@@ -124,7 +136,7 @@ export default function LandingPage({ onEnter }) {
           padding: 6px 16px;
           font-family: 'DM Mono', monospace;
           font-size: 11px;
-          color: #FF6B35;
+          color: #C8602A;
           letter-spacing: 1.5px;
           text-transform: uppercase;
           margin-bottom: 32px;
@@ -138,11 +150,11 @@ export default function LandingPage({ onEnter }) {
           font-weight: 900;
           line-height: 0.95;
           letter-spacing: -3px;
-          color: #F0E8D8;
+          color: #F4F0E8;
           margin-bottom: 8px;
           animation: fadeUp 0.6s 0.1s ease both;
         }
-        .hero-title-accent { color: #FF6B35; }
+        .hero-title-accent { color: #C8602A; }
 
         .hero-sub {
           font-family: 'Playfair Display', serif;
@@ -162,7 +174,7 @@ export default function LandingPage({ onEnter }) {
         }
         .hero-stat {
           padding: 0 32px;
-          border-right: 1px solid #222;
+          border-right: 1px solid #2a2d38;
           text-align: center;
         }
         .hero-stat:last-child { border-right: none; }
@@ -170,7 +182,7 @@ export default function LandingPage({ onEnter }) {
           font-family: 'Playfair Display', serif;
           font-size: 36px;
           font-weight: 700;
-          color: #F0E8D8;
+          color: #F4F0E8;
           line-height: 1;
         }
         .hero-stat-label {
@@ -187,8 +199,8 @@ export default function LandingPage({ onEnter }) {
           animation: fadeUp 0.6s 0.4s ease both;
         }
         .cta-primary {
-          background: #FF6B35;
-          color: #080808;
+          background: #C8602A;
+          color: #111318;
           border: none;
           padding: 16px 36px;
           font-family: 'DM Mono', monospace;
@@ -205,7 +217,7 @@ export default function LandingPage({ onEnter }) {
         .cta-secondary {
           background: transparent;
           color: #888;
-          border: 1px solid #2a2a2a;
+          border: 1px solid #2e3240;
           padding: 16px 28px;
           font-family: 'DM Mono', monospace;
           font-size: 12px;
@@ -219,11 +231,11 @@ export default function LandingPage({ onEnter }) {
 
         /* Marquee */
         .marquee-section {
-          border-top: 1px solid #141414;
-          border-bottom: 1px solid #141414;
+          border-top: 1px solid #1e2128;
+          border-bottom: 1px solid #1e2128;
           padding: 16px 0;
           overflow: hidden;
-          background: #0d0d0d;
+          background: #1a1d24;
         }
         .marquee-track {
           display: flex; gap: 48px;
@@ -238,14 +250,14 @@ export default function LandingPage({ onEnter }) {
           letter-spacing: 2px;
           flex-shrink: 0;
         }
-        .marquee-dot { color: #FF6B35; margin-right: 48px; }
+        .marquee-dot { color: #C8602A; margin-right: 48px; }
 
         /* Modules section */
         .section { padding: 100px 48px; max-width: 1100px; margin: 0 auto; }
         .section-label {
           font-family: 'DM Mono', monospace;
           font-size: 11px;
-          color: #FF6B35;
+          color: #C8602A;
           text-transform: uppercase;
           letter-spacing: 3px;
           margin-bottom: 16px;
@@ -254,7 +266,7 @@ export default function LandingPage({ onEnter }) {
           font-family: 'Playfair Display', serif;
           font-size: clamp(32px, 4vw, 48px);
           font-weight: 700;
-          color: #F0E8D8;
+          color: #F4F0E8;
           letter-spacing: -1px;
           margin-bottom: 48px;
           line-height: 1.1;
@@ -264,13 +276,13 @@ export default function LandingPage({ onEnter }) {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 1px;
-          background: #181818;
-          border: 1px solid #181818;
+          background: #1e2128;
+          border: 1px solid #1e2128;
           border-radius: 4px;
           overflow: hidden;
         }
         .module-row {
-          background: #0d0d0d;
+          background: #1a1d24;
           padding: 24px 28px;
           display: flex;
           align-items: center;
@@ -281,10 +293,11 @@ export default function LandingPage({ onEnter }) {
         .module-row:hover { background: #111; }
         .module-number {
           font-family: 'DM Mono', monospace;
-          font-size: 11px;
-          color: #333;
+          font-size: 13px;
+          color: #C8602A;
           width: 20px;
           flex-shrink: 0;
+          font-weight: 500;
         }
         .module-emoji-wrap {
           width: 36px; height: 36px;
@@ -297,7 +310,7 @@ export default function LandingPage({ onEnter }) {
         .module-row-title {
           font-size: 14px;
           font-weight: bold;
-          color: #D8D0C0;
+          color: #D8DCE8;
           line-height: 1.3;
         }
         .module-row-duration {
@@ -316,16 +329,16 @@ export default function LandingPage({ onEnter }) {
         /* Quote rotator */
         .quotes-section {
           padding: 80px 48px;
-          background: #0a0a0a;
-          border-top: 1px solid #141414;
-          border-bottom: 1px solid #141414;
+          background: #161920;
+          border-top: 1px solid #1e2128;
+          border-bottom: 1px solid #1e2128;
           text-align: center;
         }
         .quote-text {
           font-family: 'Playfair Display', serif;
           font-size: clamp(20px, 2.5vw, 30px);
           font-style: italic;
-          color: #C8C0B0;
+          color: #CDD0DC;
           max-width: 680px;
           margin: 0 auto 16px;
           line-height: 1.5;
@@ -334,7 +347,7 @@ export default function LandingPage({ onEnter }) {
         .quote-handle {
           font-family: 'DM Mono', monospace;
           font-size: 12px;
-          color: #FF6B35;
+          color: #C8602A;
           letter-spacing: 1px;
           transition: opacity 0.4s ease;
         }
@@ -345,7 +358,7 @@ export default function LandingPage({ onEnter }) {
           width: 5px; height: 5px; border-radius: 50%;
           background: #333; transition: background 0.3s;
         }
-        .quote-dot.active { background: #FF6B35; }
+        .quote-dot.active { background: #C8602A; }
 
         /* Bottom CTA */
         .bottom-cta {
@@ -369,7 +382,7 @@ export default function LandingPage({ onEnter }) {
           font-family: 'Playfair Display', serif;
           font-size: clamp(36px, 5vw, 60px);
           font-weight: 900;
-          color: #F0E8D8;
+          color: #F4F0E8;
           letter-spacing: -2px;
           margin-bottom: 16px;
           line-height: 1;
@@ -384,7 +397,7 @@ export default function LandingPage({ onEnter }) {
 
         /* Footer */
         footer {
-          border-top: 1px solid #141414;
+          border-top: 1px solid #1e2128;
           padding: 24px 48px;
           display: flex;
           align-items: center;
@@ -394,7 +407,7 @@ export default function LandingPage({ onEnter }) {
           font-family: 'Playfair Display', serif;
           font-size: 16px;
           font-weight: 700;
-          color: #FF6B35;
+          color: #C8602A;
         }
         .footer-text {
           font-family: 'DM Mono', monospace;
@@ -429,9 +442,27 @@ export default function LandingPage({ onEnter }) {
       `}</style>
 
       {/* Nav */}
-      <nav className={`nav ${scrolled ? "scrolled" : ""}`}>
-        <div className="nav-logo">🦞 OpenClaw Course</div>
-        <button className="nav-cta" onClick={onEnter}>Start Learning →</button>
+      <nav className={`nav ${scrolled ? "scrolled" : ""}`} style={{ background: scrolled ? colors.bgNav : "transparent", borderBottomColor: colors.border }}>
+        <div className="nav-logo" style={{ color: colors.accent }}>🦞 OpenClaw Course</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button
+            onClick={onToggleTheme}
+            style={{
+              background: "none",
+              border: `1px solid ${colors.border}`,
+              borderRadius: 20,
+              padding: "6px 14px",
+              fontFamily: "monospace",
+              fontSize: 12,
+              color: colors.textMuted,
+              cursor: "pointer",
+              letterSpacing: 0.5,
+            }}
+          >
+            {isDark ? "☀ Light" : "☾ Dark"}
+          </button>
+          <button className="nav-cta" onClick={onEnter}>Start Learning →</button>
+        </div>
       </nav>
 
       {/* Hero */}
@@ -553,7 +584,7 @@ export default function LandingPage({ onEnter }) {
       <div className="section" style={{ paddingBottom: 60 }}>
         <div className="section-label">After this course</div>
         <h2 className="section-title">You'll know exactly<br />what you're doing.</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1px", background: "#181818", border: "1px solid #181818", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1px", background: "#1e2128", border: "1px solid #1e2128", borderRadius: 4, overflow: "hidden" }}>
           {[
             ["🏗️", "Deploy OpenClaw", "Local, VPS, or Mac Mini — pick the right setup for your needs"],
             ["✍️", "Write a powerful SOUL.md", "The file that makes your agent feel like a teammate, not a chatbot"],
@@ -564,10 +595,10 @@ export default function LandingPage({ onEnter }) {
             ["🤖", "Run multiple agents", "Route different channels to specialized agents with different personalities"],
             ["🛠️", "Build custom skills", "Write SKILL.md files that automate repetitive workflows precisely"],
           ].map(([icon, title, desc], i) => (
-            <div key={i} style={{ background: "#0d0d0d", padding: "24px 28px" }}>
+            <div key={i} style={{ background: "#1a1d24", padding: "24px 28px" }}>
               <div style={{ fontSize: 24, marginBottom: 10 }}>{icon}</div>
-              <div style={{ fontSize: 14, fontWeight: "bold", color: "#D8D0C0", marginBottom: 4 }}>{title}</div>
-              <div style={{ fontSize: 12, color: "#555", lineHeight: 1.5, fontFamily: "'DM Mono', monospace" }}>{desc}</div>
+              <div style={{ fontSize: 14, fontWeight: "bold", color: "#D8DCE8", marginBottom: 4 }}>{title}</div>
+              <div style={{ fontSize: 12, color: "#8A8FA0", lineHeight: 1.5, fontFamily: "'DM Mono', monospace" }}>{desc}</div>
             </div>
           ))}
         </div>

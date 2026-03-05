@@ -55,7 +55,7 @@ function VideoPlayer({ moduleId, color }) {
   if (!videoId) {
     return (
       <div style={{
-        background: "#0a0a0a",
+        background: "#161920",
         border: `1px solid ${color}33`,
         borderRadius: 4,
         aspectRatio: "16/9",
@@ -67,7 +67,7 @@ function VideoPlayer({ moduleId, color }) {
         margin: "0 0 32px 0",
       }}>
         <div style={{ fontSize: 32 }}>🎬</div>
-        <div style={{ fontFamily: "monospace", fontSize: 12, color: "#444", letterSpacing: 1 }}>
+        <div style={{ fontFamily: "monospace", fontSize: 12, color: "#6E7380", letterSpacing: 1 }}>
           VIDEO COMING SOON
         </div>
       </div>
@@ -104,7 +104,7 @@ const COURSE_DATA = {
       title: "What OpenClaw Actually Is",
       duration: 10,
       emoji: "🦞",
-      color: "#FF6B35",
+      color: "#C8602A",
       lessons: [
         {
           title: "Beyond the Chatbot",
@@ -772,7 +772,17 @@ Personal AI agents that run locally, remember everything, act proactively, and i
 
 const totalLessons = COURSE_DATA.modules.reduce((sum, m) => sum + m.lessons.length, 0);
 
-export default function Course({ onBack }) {
+export default function Course({ onBack, theme = "dark", onToggleTheme }) {
+  const isDark = theme === "dark";
+  const colors = {
+    bg: isDark ? "#111318" : "#F5F3EF",
+    bgCard: isDark ? "#1a1d24" : "#EDEAE4",
+    bgSidebar: isDark ? "#161920" : "#E8E5DF",
+    text: isDark ? "#ECEEF4" : "#1A1C24",
+    textMuted: isDark ? "#9CA0B0" : "#5A5E70",
+    border: isDark ? "#252830" : "#D0CCC4",
+    accent: "#C8602A",
+  };
   const [activeModule, setActiveModule] = useState(0);
   const [activeLesson, setActiveLesson] = useState(0);
   const [completedLessons, setCompletedLessons] = useState(new Set());
@@ -916,9 +926,9 @@ export default function Course({ onBack }) {
   return (
     <div style={{
       fontFamily: "'Georgia', 'Times New Roman', serif",
-      background: "#0D0D0D",
+      background: colors.bg,
       minHeight: "100vh",
-      color: "#E8E0D0",
+      color: colors.text,
       display: "flex",
       flexDirection: "column",
     }}>
@@ -931,13 +941,13 @@ export default function Course({ onBack }) {
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-track { background: #252830; }
         ::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
 
         /* ── NAV ─────────────────────────────────────────────── */
         .nav-bar {
           background: #111;
-          border-bottom: 1px solid #222;
+          border-bottom: 1px solid #2a2d38;
           padding: 12px 16px;
           display: flex;
           align-items: center;
@@ -949,7 +959,7 @@ export default function Course({ onBack }) {
         .nav-hamburger {
           display: none;
           background: none;
-          border: 1px solid #2a2a2a;
+          border: 1px solid #2e3240;
           color: #888;
           padding: 6px 10px;
           border-radius: 3px;
@@ -962,7 +972,7 @@ export default function Course({ onBack }) {
           font-size: 16px;
           font-weight: bold;
           letter-spacing: -0.5px;
-          color: #FF6B35;
+          color: #C8602A;
           white-space: nowrap;
         }
         .nav-sub {
@@ -974,14 +984,14 @@ export default function Course({ onBack }) {
         .progress-bar-outer {
           flex: 1;
           height: 4px;
-          background: #222;
+          background: #2a2d38;
           border-radius: 2px;
           overflow: hidden;
           min-width: 40px;
         }
         .progress-bar-inner {
           height: 100%;
-          background: linear-gradient(90deg, #FF6B35, #EC4899);
+          background: linear-gradient(90deg, #C8602A, #EC4899);
           border-radius: 2px;
           transition: width 0.4s ease;
         }
@@ -1008,7 +1018,7 @@ export default function Course({ onBack }) {
           top: 0; left: 0; bottom: 0;
           width: min(85vw, 320px);
           background: #111;
-          border-right: 1px solid #222;
+          border-right: 1px solid #2a2d38;
           overflow-y: auto;
           z-index: 201;
           padding: 16px 0;
@@ -1074,7 +1084,7 @@ export default function Course({ onBack }) {
           margin-bottom: 8px;
           border-bottom: 1px solid #1e1e1e;
         }
-        .sidebar-overview-btn:hover { color: #E8E0D0; }
+        .sidebar-overview-btn:hover { color: #ECEEF4; }
         .module-header {
           padding: 10px 20px 6px;
           border: none;
@@ -1121,7 +1131,7 @@ export default function Course({ onBack }) {
           transition: background 0.15s;
           min-height: 44px;
         }
-        .lesson-btn:hover { background: #181818; }
+        .lesson-btn:hover { background: #1e2128; }
         .lesson-btn.active { background: #1e1e1e; }
         .lesson-icon {
           width: 18px; height: 18px;
@@ -1132,15 +1142,15 @@ export default function Course({ onBack }) {
           margin-top: 1px;
         }
         .lesson-icon.done { background: #22c55e; color: white; }
-        .lesson-icon.current { background: #FF6B35; color: white; }
-        .lesson-icon.todo { background: #2a2a2a; color: #555; }
+        .lesson-icon.current { background: #C8602A; color: white; }
+        .lesson-icon.todo { background: #2e3240; color: #555; }
         .lesson-title-text {
           font-size: 12px;
           color: #999;
           line-height: 1.4;
           flex: 1;
         }
-        .lesson-title-text.active { color: #E8E0D0; }
+        .lesson-title-text.active { color: #ECEEF4; }
         .lesson-duration {
           font-size: 10px;
           color: #444;
@@ -1161,7 +1171,7 @@ export default function Course({ onBack }) {
 
         /* ── OVERVIEW ─────────────────────────────────────────── */
         .overview-hero {
-          background: linear-gradient(135deg, #1a0a00 0%, #0D0D0D 60%);
+          background: linear-gradient(135deg, #1a0a00 0%, #111318 60%);
           padding: 32px 20px 28px;
           border-bottom: 1px solid #1e1e1e;
         }
@@ -1169,7 +1179,7 @@ export default function Course({ onBack }) {
         .overview-title {
           font-size: 32px;
           font-weight: bold;
-          color: #FF6B35;
+          color: #C8602A;
           letter-spacing: -1px;
           line-height: 1;
           margin-bottom: 6px;
@@ -1196,7 +1206,7 @@ export default function Course({ onBack }) {
         .stat-value {
           font-size: 24px;
           font-weight: bold;
-          color: #E8E0D0;
+          color: #ECEEF4;
         }
         .stat-label {
           font-size: 10px;
@@ -1212,15 +1222,15 @@ export default function Course({ onBack }) {
           gap: 12px;
         }
         .module-card {
-          background: #141414;
-          border: 1px solid #222;
+          background: #1e2128;
+          border: 1px solid #2a2d38;
           border-radius: 4px;
           padding: 18px;
           cursor: pointer;
           transition: border-color 0.2s;
           -webkit-tap-highlight-color: transparent;
         }
-        .module-card:active { border-color: #555; background: #181818; }
+        .module-card:active { border-color: #555; background: #1e2128; }
         .module-card-top {
           display: flex;
           align-items: center;
@@ -1232,7 +1242,7 @@ export default function Course({ onBack }) {
         .module-card-title {
           font-size: 15px;
           font-weight: bold;
-          color: #E8E0D0;
+          color: #ECEEF4;
           margin-bottom: 2px;
         }
         .module-card-meta {
@@ -1258,7 +1268,7 @@ export default function Course({ onBack }) {
         }
         .module-progress-bar {
           height: 2px;
-          background: #222;
+          background: #2a2d38;
           border-radius: 1px;
           margin-bottom: 12px;
           overflow: hidden;
@@ -1286,7 +1296,7 @@ export default function Course({ onBack }) {
         .lesson-big-title {
           font-size: 22px;
           font-weight: bold;
-          color: #E8E0D0;
+          color: #ECEEF4;
           letter-spacing: -0.3px;
           line-height: 1.2;
           margin-bottom: 10px;
@@ -1315,25 +1325,25 @@ export default function Course({ onBack }) {
         .lesson-body p {
           font-size: 15px;
           line-height: 1.8;
-          color: #C8C0B0;
+          color: #CDD0DC;
           margin-bottom: 16px;
         }
         .lesson-body .md-h2 {
           font-size: 18px;
-          color: #E8E0D0;
+          color: #ECEEF4;
           margin: 24px 0 10px;
           padding-bottom: 8px;
-          border-bottom: 1px solid #222;
+          border-bottom: 1px solid #2a2d38;
         }
         .lesson-body .md-h3 {
           font-size: 15px;
-          color: #E8E0D0;
+          color: #ECEEF4;
           margin: 20px 0 8px;
           font-weight: bold;
         }
         .code-block {
-          background: #0a0a0a;
-          border: 1px solid #222;
+          background: #161920;
+          border: 1px solid #2a2d38;
           border-radius: 4px;
           padding: 14px 14px;
           overflow-x: auto;
@@ -1345,13 +1355,13 @@ export default function Course({ onBack }) {
           color: #a0d0a0;
         }
         .inline-code {
-          background: #1a1a1a;
-          border: 1px solid #2a2a2a;
+          background: #252830;
+          border: 1px solid #2e3240;
           border-radius: 2px;
           padding: 1px 5px;
           font-family: 'Courier New', Courier, monospace;
           font-size: 12px;
-          color: #FF6B35;
+          color: #C8602A;
           word-break: break-all;
         }
         .table-wrap {
@@ -1366,11 +1376,11 @@ export default function Course({ onBack }) {
           min-width: 300px;
         }
         th {
-          background: #1a1a1a;
-          color: #E8E0D0;
+          background: #252830;
+          color: #ECEEF4;
           padding: 8px 10px;
           text-align: left;
-          border: 1px solid #2a2a2a;
+          border: 1px solid #2e3240;
           font-weight: bold;
           white-space: nowrap;
         }
@@ -1383,14 +1393,14 @@ export default function Course({ onBack }) {
         tr:nth-child(even) td { background: #0f0f0f; }
         .bullet-item {
           font-size: 14px;
-          color: #C8C0B0;
+          color: #CDD0DC;
           line-height: 1.7;
           padding: 4px 0;
           padding-left: 4px;
         }
         .checkbox-item {
           font-size: 14px;
-          color: #C8C0B0;
+          color: #CDD0DC;
           line-height: 1.7;
           padding: 5px 0;
           display: flex;
@@ -1399,7 +1409,7 @@ export default function Course({ onBack }) {
         }
         .checkbox-item.done { color: #555; text-decoration: line-through; }
         .checkbox { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
-        strong { color: #E8E0D0; }
+        strong { color: #ECEEF4; }
 
         /* ── LESSON FOOTER ────────────────────────────────────── */
         .lesson-footer {
@@ -1424,7 +1434,7 @@ export default function Course({ onBack }) {
           -webkit-tap-highlight-color: transparent;
         }
         .btn:active { opacity: 0.75; }
-        .btn-primary { background: #FF6B35; color: white; flex: 1; }
+        .btn-primary { background: #C8602A; color: white; flex: 1; }
         .btn-secondary {
           background: #1e1e1e;
           color: #aaa;
@@ -1433,7 +1443,7 @@ export default function Course({ onBack }) {
         .btn-back {
           background: none;
           color: #555;
-          border: 1px solid #222;
+          border: 1px solid #2a2d38;
           padding: 13px 14px;
           font-size: 12px;
         }
@@ -1444,7 +1454,7 @@ export default function Course({ onBack }) {
           position: fixed;
           bottom: 0; left: 0; right: 0;
           background: #111;
-          border-top: 1px solid #222;
+          border-top: 1px solid #2a2d38;
           padding: 8px 0;
           padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
           z-index: 90;
@@ -1474,7 +1484,7 @@ export default function Course({ onBack }) {
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
-        .bottom-nav-label.active { color: #FF6B35; }
+        .bottom-nav-label.active { color: #C8602A; }
 
         /* ── RESPONSIVE BREAKPOINTS ───────────────────────────── */
         @media (min-width: 768px) {
@@ -1534,10 +1544,17 @@ export default function Course({ onBack }) {
         <div className="progress-label">{totalCompleted}/{totalLessons} · {progressPct}%</div>
         {onBack && (
           <button onClick={onBack} style={{
-            background: "none", border: "1px solid #2a2a2a", color: "#666",
+            background: "none", border: "1px solid #2e3240", color: "#848898",
             padding: "6px 12px", borderRadius: 2, fontFamily: "monospace",
             fontSize: 11, cursor: "pointer", flexShrink: 0,
           }}>← Back</button>
+        )}
+        {onToggleTheme && (
+          <button onClick={onToggleTheme} style={{
+            background: "none", border: "1px solid #2e3240", color: "#848898",
+            padding: "6px 12px", borderRadius: 2, fontFamily: "monospace",
+            fontSize: 11, cursor: "pointer", flexShrink: 0,
+          }}>{isDark ? "☀" : "☾"}</button>
         )}
       </div>
 
@@ -1580,7 +1597,7 @@ export default function Course({ onBack }) {
                     <div
                       key={mod.id}
                       className="module-card"
-                      style={{ borderTop: `3px solid ${locked ? "#2a2a2a" : mod.color}`, opacity: locked ? 0.7 : 1 }}
+                      style={{ borderTop: `3px solid ${locked ? "#2e3240" : mod.color}`, opacity: locked ? 0.7 : 1 }}
                       onClick={() => openLesson(mIdx, 0)}
                     >
                       <div className="module-card-top">
@@ -1597,7 +1614,7 @@ export default function Course({ onBack }) {
                         {locked && (
                           <div style={{
                             fontFamily: "monospace", fontSize: 9,
-                            color: "#FF6B35", border: "1px solid #FF6B3566",
+                            color: "#C8602A", border: "1px solid #C8602A66",
                             padding: "2px 6px", borderRadius: 2,
                             letterSpacing: 1, textTransform: "uppercase",
                           }}>Unlock</div>
