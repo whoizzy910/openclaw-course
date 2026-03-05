@@ -38,7 +38,7 @@ function useUnlockStatus() {
 // ── Paste your YouTube video IDs here after uploading ──────────────────
 // How to get an ID: https://www.youtube.com/watch?v=dQw4w9WgXcQ  →  dQw4w9WgXcQ
 const videoConfig = {
-  1: "", // Module 1: What OpenClaw Actually Is
+  1: "p7kRS97kGEc", // Module 1: What OpenClaw Actually Is
   2: "", // Module 2: Installation & First Run
   3: "", // Module 3: Crafting Your SOUL.md
   4: "", // Module 4: Memory & HEARTBEAT Mastery
