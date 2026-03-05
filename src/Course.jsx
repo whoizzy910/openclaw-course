@@ -1,4 +1,98 @@
 import { useState, useEffect, useRef } from "react";
+import PaywallModal from "./PaywallModal";
+
+// Module 1 is free, all others require payment
+const FREE_MODULES = [1];
+
+function useUnlockStatus() {
+  const [unlocked, setUnlocked] = useState(() => {
+    try { return localStorage.getItem("learnclaw_unlocked") === "true"; }
+    catch { return false; }
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    const unlockedParam = params.get("unlocked");
+    if (unlockedParam === "true" && sessionId) {
+      fetch("/api/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.unlocked) {
+            try { localStorage.setItem("learnclaw_unlocked", "true"); } catch {}
+            setUnlocked(true);
+            window.history.replaceState({}, "", window.location.pathname);
+          }
+        })
+        .catch(console.error);
+    }
+  }, []);
+
+  return [unlocked, setUnlocked];
+}
+
+// ── Paste your YouTube video IDs here after uploading ──────────────────
+// How to get an ID: https://www.youtube.com/watch?v=dQw4w9WgXcQ  →  dQw4w9WgXcQ
+const videoConfig = {
+  1: "", // Module 1: What OpenClaw Actually Is
+  2: "", // Module 2: Installation & First Run
+  3: "", // Module 3: Crafting Your SOUL.md
+  4: "", // Module 4: Memory & HEARTBEAT Mastery
+  5: "", // Module 5: Skills: Install, Vet & Build
+  6: "", // Module 6: Model Selection & Cost Control
+  7: "", // Module 7: Multi-Agent & Advanced Patterns
+  8: "", // Module 8: Putting It All Together
+};
+// ───────────────────────────────────────────────────────────────────────
+
+// YouTube embed — shows placeholder if no ID yet
+function VideoPlayer({ moduleId, color }) {
+  const videoId = videoConfig[moduleId];
+  if (!videoId) {
+    return (
+      <div style={{
+        background: "#0a0a0a",
+        border: `1px solid ${color}33`,
+        borderRadius: 4,
+        aspectRatio: "16/9",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        margin: "0 0 32px 0",
+      }}>
+        <div style={{ fontSize: 32 }}>🎬</div>
+        <div style={{ fontFamily: "monospace", fontSize: 12, color: "#444", letterSpacing: 1 }}>
+          VIDEO COMING SOON
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div style={{
+      position: "relative",
+      aspectRatio: "16/9",
+      margin: "0 0 32px 0",
+      borderRadius: 4,
+      overflow: "hidden",
+      border: `1px solid ${color}33`,
+    }}>
+      <iframe
+        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&color=white`}
+        title="Module video"
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+      />
+    </div>
+  );
+}
 
 const COURSE_DATA = {
   title: "Maximize OpenClaw",
@@ -683,10 +777,19 @@ export default function Course({ onBack }) {
   const [activeLesson, setActiveLesson] = useState(0);
   const [completedLessons, setCompletedLessons] = useState(new Set());
   const [view, setView] = useState("overview"); // overview | lesson
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [paywallModuleTitle, setPaywallModuleTitle] = useState("");
+  const [unlocked, setUnlocked] = useUnlockStatus();
   const contentRef = useRef(null);
 
   const currentModule = COURSE_DATA.modules[activeModule];
   const currentLesson = currentModule?.lessons[activeLesson];
+
+  function isModuleLocked(mIdx) {
+    if (unlocked) return false;
+    const mod = COURSE_DATA.modules[mIdx];
+    return !FREE_MODULES.includes(mod.id);
+  }
 
   const totalCompleted = completedLessons.size;
   const progressPct = Math.round((totalCompleted / totalLessons) * 100);
@@ -700,6 +803,11 @@ export default function Course({ onBack }) {
   }
 
   function openLesson(mIdx, lIdx) {
+    if (isModuleLocked(mIdx)) {
+      setPaywallModuleTitle(COURSE_DATA.modules[mIdx].title);
+      setShowPaywall(true);
+      return;
+    }
     setActiveModule(mIdx);
     setActiveLesson(lIdx);
     setView("lesson");
@@ -759,6 +867,51 @@ export default function Course({ onBack }) {
   }
 
   const isCompleted = (mIdx, lIdx) => completedLessons.has(getLessonKey(mIdx, lIdx));
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Close drawer when lesson opens on mobile
+  function openLessonMobile(mIdx, lIdx) {
+    openLesson(mIdx, lIdx);
+    setDrawerOpen(false);
+  }
+
+  const SidebarContents = ({ onLessonClick }) => (
+    <>
+      <button className="sidebar-overview-btn" onClick={() => { setView("overview"); setDrawerOpen(false); }}>
+        ← Course Overview
+      </button>
+      {COURSE_DATA.modules.map((mod, mIdx) => (
+        <div key={mod.id}>
+          <div className="module-header">
+            <div className="module-label">
+              <div className="module-dot" style={{ background: mod.color }} />
+              <div className="module-name">{mod.emoji} {mod.title}</div>
+            </div>
+            <div className="module-meta">{mod.duration} min · {mod.lessons.length} lessons</div>
+          </div>
+          {mod.lessons.map((lesson, lIdx) => {
+            const key = getLessonKey(mIdx, lIdx);
+            const isActive = view === "lesson" && activeModule === mIdx && activeLesson === lIdx;
+            const isDone = completedLessons.has(key);
+            const locked = isModuleLocked(mIdx);
+            return (
+              <button
+                key={lIdx}
+                className={`lesson-btn ${isActive ? "active" : ""}`}
+                onClick={() => openLesson(mIdx, lIdx)}
+              >
+                <div className={`lesson-icon ${isDone ? "done" : isActive ? "current" : "todo"}`}>
+                  {locked ? "🔒" : isDone ? "✓" : isActive ? "▶" : lIdx + 1}
+                </div>
+                <div className={`lesson-title-text ${isActive ? "active" : ""}`} style={{ color: locked ? "#444" : undefined }}>{lesson.title}</div>
+                <div className="lesson-duration">{lesson.duration}m</div>
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </>
+  );
 
   return (
     <div style={{
@@ -769,33 +922,54 @@ export default function Course({ onBack }) {
       display: "flex",
       flexDirection: "column",
     }}>
+      {showPaywall && (
+        <PaywallModal
+          onClose={() => setShowPaywall(false)}
+          moduleTitle={paywallModuleTitle}
+        />
+      )}
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #1a1a1a; }
         ::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
-        
+
+        /* ── NAV ─────────────────────────────────────────────── */
         .nav-bar {
           background: #111;
           border-bottom: 1px solid #222;
-          padding: 14px 24px;
+          padding: 12px 16px;
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 12px;
           position: sticky;
           top: 0;
-          z-index: 50;
+          z-index: 100;
+        }
+        .nav-hamburger {
+          display: none;
+          background: none;
+          border: 1px solid #2a2a2a;
+          color: #888;
+          padding: 6px 10px;
+          border-radius: 3px;
+          cursor: pointer;
+          font-size: 16px;
+          line-height: 1;
+          flex-shrink: 0;
         }
         .nav-title {
-          font-size: 18px;
+          font-size: 16px;
           font-weight: bold;
           letter-spacing: -0.5px;
           color: #FF6B35;
+          white-space: nowrap;
         }
         .nav-sub {
-          font-size: 12px;
-          color: #666;
+          font-size: 11px;
+          color: #555;
           font-family: monospace;
+          display: none;
         }
         .progress-bar-outer {
           flex: 1;
@@ -803,6 +977,7 @@ export default function Course({ onBack }) {
           background: #222;
           border-radius: 2px;
           overflow: hidden;
+          min-width: 40px;
         }
         .progress-bar-inner {
           height: 100%;
@@ -815,29 +990,78 @@ export default function Course({ onBack }) {
           color: #666;
           font-family: monospace;
           white-space: nowrap;
+          flex-shrink: 0;
         }
-        
+
+        /* ── MOBILE DRAWER OVERLAY ────────────────────────────── */
+        .drawer-overlay {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.7);
+          z-index: 200;
+          backdrop-filter: blur(2px);
+        }
+        .drawer-overlay.open { display: block; }
+        .drawer-panel {
+          position: fixed;
+          top: 0; left: 0; bottom: 0;
+          width: min(85vw, 320px);
+          background: #111;
+          border-right: 1px solid #222;
+          overflow-y: auto;
+          z-index: 201;
+          padding: 16px 0;
+          transform: translateX(-100%);
+          transition: transform 0.25s ease;
+        }
+        .drawer-panel.open { transform: translateX(0); }
+        .drawer-close {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 16px 16px;
+          border-bottom: 1px solid #1e1e1e;
+          margin-bottom: 4px;
+        }
+        .drawer-close-label {
+          font-family: monospace;
+          font-size: 11px;
+          color: #555;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+        .drawer-close-btn {
+          background: none;
+          border: 1px solid #333;
+          color: #666;
+          padding: 4px 10px;
+          border-radius: 2px;
+          cursor: pointer;
+          font-size: 14px;
+        }
+
+        /* ── LAYOUT ───────────────────────────────────────────── */
         .layout {
           display: flex;
           flex: 1;
           min-height: 0;
-          height: calc(100vh - 53px);
+          height: calc(100vh - 49px);
         }
-        
         .sidebar {
-          width: 300px;
-          min-width: 300px;
+          width: 280px;
+          min-width: 280px;
           background: #111;
           border-right: 1px solid #1e1e1e;
           overflow-y: auto;
           padding: 16px 0;
+          flex-shrink: 0;
         }
-        
         .sidebar-overview-btn {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 10px 20px;
+          padding: 12px 20px;
           cursor: pointer;
           font-size: 13px;
           color: #888;
@@ -851,10 +1075,8 @@ export default function Course({ onBack }) {
           border-bottom: 1px solid #1e1e1e;
         }
         .sidebar-overview-btn:hover { color: #E8E0D0; }
-        
         .module-header {
           padding: 10px 20px 6px;
-          cursor: pointer;
           border: none;
           background: none;
           width: 100%;
@@ -867,31 +1089,29 @@ export default function Course({ onBack }) {
           gap: 8px;
         }
         .module-dot {
-          width: 8px;
-          height: 8px;
+          width: 8px; height: 8px;
           border-radius: 50%;
           flex-shrink: 0;
         }
         .module-name {
-          font-size: 12px;
+          font-size: 11px;
           font-weight: bold;
           letter-spacing: 0.5px;
           text-transform: uppercase;
-          color: #999;
+          color: #888;
         }
         .module-meta {
-          font-size: 11px;
-          color: #555;
+          font-size: 10px;
+          color: #444;
           margin-top: 2px;
           padding-left: 16px;
           font-family: monospace;
         }
-        
         .lesson-btn {
           display: flex;
           align-items: flex-start;
           gap: 10px;
-          padding: 7px 20px 7px 36px;
+          padding: 9px 16px 9px 32px;
           cursor: pointer;
           border: none;
           background: none;
@@ -899,213 +1119,228 @@ export default function Course({ onBack }) {
           text-align: left;
           font-family: inherit;
           transition: background 0.15s;
+          min-height: 44px;
         }
         .lesson-btn:hover { background: #181818; }
         .lesson-btn.active { background: #1e1e1e; }
         .lesson-icon {
-          width: 16px;
-          height: 16px;
+          width: 18px; height: 18px;
           border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          display: flex; align-items: center; justify-content: center;
           font-size: 8px;
           flex-shrink: 0;
-          margin-top: 2px;
+          margin-top: 1px;
         }
         .lesson-icon.done { background: #22c55e; color: white; }
         .lesson-icon.current { background: #FF6B35; color: white; }
-        .lesson-icon.todo { background: #333; color: #666; }
+        .lesson-icon.todo { background: #2a2a2a; color: #555; }
         .lesson-title-text {
           font-size: 12px;
-          color: #aaa;
+          color: #999;
           line-height: 1.4;
           flex: 1;
         }
         .lesson-title-text.active { color: #E8E0D0; }
         .lesson-duration {
           font-size: 10px;
-          color: #555;
+          color: #444;
           font-family: monospace;
           flex-shrink: 0;
-          margin-top: 3px;
+          margin-top: 2px;
         }
-        
+
+        /* ── MAIN CONTENT ─────────────────────────────────────── */
         .main-content {
           flex: 1;
           overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
           padding: 0;
+          /* bottom padding for mobile bottom nav */
+          padding-bottom: env(safe-area-inset-bottom, 0px);
         }
-        
-        /* Overview styles */
+
+        /* ── OVERVIEW ─────────────────────────────────────────── */
         .overview-hero {
           background: linear-gradient(135deg, #1a0a00 0%, #0D0D0D 60%);
-          padding: 60px 48px 48px;
+          padding: 32px 20px 28px;
           border-bottom: 1px solid #1e1e1e;
         }
-        .overview-lobster {
-          font-size: 48px;
-          margin-bottom: 12px;
-        }
+        .overview-lobster { font-size: 36px; margin-bottom: 8px; }
         .overview-title {
-          font-size: 42px;
+          font-size: 32px;
           font-weight: bold;
           color: #FF6B35;
           letter-spacing: -1px;
           line-height: 1;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
         }
         .overview-subtitle {
-          font-size: 16px;
-          color: #888;
+          font-size: 13px;
+          color: #666;
           font-family: monospace;
-          margin-bottom: 32px;
+          margin-bottom: 24px;
+          line-height: 1.5;
         }
         .overview-stats {
           display: flex;
-          gap: 40px;
+          gap: 0;
+          flex-wrap: wrap;
         }
         .stat-item {
           display: flex;
           flex-direction: column;
           gap: 2px;
+          padding-right: 24px;
+          margin-bottom: 8px;
         }
         .stat-value {
-          font-size: 28px;
+          font-size: 24px;
           font-weight: bold;
           color: #E8E0D0;
         }
         .stat-label {
-          font-size: 12px;
-          color: #666;
+          font-size: 10px;
+          color: #555;
           font-family: monospace;
           text-transform: uppercase;
           letter-spacing: 1px;
         }
-        
         .modules-grid {
-          padding: 48px;
+          padding: 20px 16px;
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-          gap: 20px;
+          grid-template-columns: 1fr;
+          gap: 12px;
         }
         .module-card {
           background: #141414;
           border: 1px solid #222;
           border-radius: 4px;
-          padding: 24px;
+          padding: 18px;
           cursor: pointer;
-          transition: border-color 0.2s, transform 0.2s;
+          transition: border-color 0.2s;
+          -webkit-tap-highlight-color: transparent;
         }
-        .module-card:hover {
-          border-color: #444;
-          transform: translateY(-2px);
+        .module-card:active { border-color: #555; background: #181818; }
+        .module-card-top {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 10px;
         }
-        .module-card-emoji {
-          font-size: 28px;
-          margin-bottom: 12px;
-        }
+        .module-card-emoji { font-size: 24px; }
+        .module-card-info { flex: 1; }
         .module-card-title {
-          font-size: 16px;
+          font-size: 15px;
           font-weight: bold;
           color: #E8E0D0;
-          margin-bottom: 4px;
+          margin-bottom: 2px;
         }
         .module-card-meta {
           font-size: 11px;
           font-family: monospace;
-          color: #666;
-          margin-bottom: 16px;
+          color: #555;
         }
         .module-card-lessons {
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 3px;
         }
         .module-card-lesson {
           font-size: 12px;
-          color: #777;
-          padding: 2px 0;
+          color: #666;
+          padding: 2px 0 2px 8px;
           border-left: 2px solid #333;
-          padding-left: 8px;
         }
         .module-card-lesson.done-lesson {
-          color: #555;
+          color: #444;
           border-left-color: #22c55e;
           text-decoration: line-through;
         }
-        
-        /* Lesson styles */
+        .module-progress-bar {
+          height: 2px;
+          background: #222;
+          border-radius: 1px;
+          margin-bottom: 12px;
+          overflow: hidden;
+        }
+        .module-progress-fill {
+          height: 100%;
+          border-radius: 1px;
+          transition: width 0.3s;
+        }
+
+        /* ── LESSON VIEW ──────────────────────────────────────── */
         .lesson-header {
-          padding: 40px 48px 32px;
+          padding: 20px 16px 16px;
           border-bottom: 1px solid #1e1e1e;
           background: #0f0f0f;
         }
         .lesson-breadcrumb {
-          font-size: 11px;
-          color: #555;
+          font-size: 10px;
+          color: #444;
           font-family: monospace;
-          margin-bottom: 12px;
+          margin-bottom: 8px;
           text-transform: uppercase;
           letter-spacing: 1px;
         }
         .lesson-big-title {
-          font-size: 28px;
+          font-size: 22px;
           font-weight: bold;
           color: #E8E0D0;
-          letter-spacing: -0.5px;
+          letter-spacing: -0.3px;
           line-height: 1.2;
-          margin-bottom: 8px;
+          margin-bottom: 10px;
         }
         .lesson-meta-row {
           display: flex;
           align-items: center;
-          gap: 16px;
-          font-size: 12px;
-          color: #666;
+          gap: 10px;
+          font-size: 11px;
+          color: #555;
           font-family: monospace;
+          flex-wrap: wrap;
         }
         .lesson-tag {
           padding: 3px 8px;
           border-radius: 2px;
-          font-size: 10px;
+          font-size: 9px;
           letter-spacing: 0.5px;
           text-transform: uppercase;
           font-weight: bold;
         }
-        
         .lesson-body {
-          padding: 40px 48px;
-          max-width: 720px;
+          padding: 20px 16px 24px;
+          max-width: 100%;
         }
         .lesson-body p {
           font-size: 15px;
-          line-height: 1.75;
+          line-height: 1.8;
           color: #C8C0B0;
           margin-bottom: 16px;
         }
         .lesson-body .md-h2 {
-          font-size: 20px;
+          font-size: 18px;
           color: #E8E0D0;
-          margin: 28px 0 12px;
+          margin: 24px 0 10px;
           padding-bottom: 8px;
           border-bottom: 1px solid #222;
         }
         .lesson-body .md-h3 {
-          font-size: 16px;
+          font-size: 15px;
           color: #E8E0D0;
-          margin: 24px 0 8px;
+          margin: 20px 0 8px;
           font-weight: bold;
         }
         .code-block {
           background: #0a0a0a;
           border: 1px solid #222;
           border-radius: 4px;
-          padding: 16px 20px;
+          padding: 14px 14px;
           overflow-x: auto;
-          margin: 16px 0;
+          -webkit-overflow-scrolling: touch;
+          margin: 14px 0;
           font-family: 'Courier New', Courier, monospace;
-          font-size: 13px;
+          font-size: 12px;
           line-height: 1.6;
           color: #a0d0a0;
         }
@@ -1117,26 +1352,30 @@ export default function Course({ onBack }) {
           font-family: 'Courier New', Courier, monospace;
           font-size: 12px;
           color: #FF6B35;
+          word-break: break-all;
         }
         .table-wrap {
           overflow-x: auto;
-          margin: 16px 0;
+          -webkit-overflow-scrolling: touch;
+          margin: 14px 0;
         }
         table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 13px;
+          font-size: 12px;
+          min-width: 300px;
         }
         th {
           background: #1a1a1a;
           color: #E8E0D0;
-          padding: 8px 12px;
+          padding: 8px 10px;
           text-align: left;
           border: 1px solid #2a2a2a;
           font-weight: bold;
+          white-space: nowrap;
         }
         td {
-          padding: 8px 12px;
+          padding: 8px 10px;
           border: 1px solid #1e1e1e;
           color: #aaa;
           vertical-align: top;
@@ -1145,32 +1384,34 @@ export default function Course({ onBack }) {
         .bullet-item {
           font-size: 14px;
           color: #C8C0B0;
-          line-height: 1.6;
-          padding: 3px 0;
+          line-height: 1.7;
+          padding: 4px 0;
           padding-left: 4px;
         }
         .checkbox-item {
           font-size: 14px;
           color: #C8C0B0;
-          line-height: 1.6;
-          padding: 3px 0;
+          line-height: 1.7;
+          padding: 5px 0;
           display: flex;
           align-items: flex-start;
-          gap: 8px;
+          gap: 10px;
         }
         .checkbox-item.done { color: #555; text-decoration: line-through; }
-        .checkbox { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+        .checkbox { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
         strong { color: #E8E0D0; }
-        
+
+        /* ── LESSON FOOTER ────────────────────────────────────── */
         .lesson-footer {
-          padding: 32px 48px;
+          padding: 16px;
           border-top: 1px solid #1e1e1e;
           display: flex;
-          gap: 12px;
+          gap: 10px;
           align-items: center;
+          flex-wrap: wrap;
         }
         .btn {
-          padding: 10px 20px;
+          padding: 13px 18px;
           border-radius: 3px;
           font-size: 13px;
           cursor: pointer;
@@ -1179,12 +1420,11 @@ export default function Course({ onBack }) {
           font-weight: bold;
           letter-spacing: 0.3px;
           transition: opacity 0.2s;
+          min-height: 44px;
+          -webkit-tap-highlight-color: transparent;
         }
-        .btn:hover { opacity: 0.85; }
-        .btn-primary {
-          background: #FF6B35;
-          color: white;
-        }
+        .btn:active { opacity: 0.75; }
+        .btn-primary { background: #FF6B35; color: white; flex: 1; }
         .btn-secondary {
           background: #1e1e1e;
           color: #aaa;
@@ -1192,64 +1432,123 @@ export default function Course({ onBack }) {
         }
         .btn-back {
           background: none;
-          color: #666;
-          border: 1px solid #2a2a2a;
-          padding: 10px 16px;
+          color: #555;
+          border: 1px solid #222;
+          padding: 13px 14px;
           font-size: 12px;
+        }
+
+        /* ── MOBILE BOTTOM NAV ────────────────────────────────── */
+        .bottom-nav {
+          display: none;
+          position: fixed;
+          bottom: 0; left: 0; right: 0;
+          background: #111;
+          border-top: 1px solid #222;
+          padding: 8px 0;
+          padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+          z-index: 90;
+        }
+        .bottom-nav-inner {
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+        }
+        .bottom-nav-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 3px;
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 4px 16px;
+          -webkit-tap-highlight-color: transparent;
+          min-width: 64px;
+        }
+        .bottom-nav-icon { font-size: 20px; }
+        .bottom-nav-label {
+          font-size: 10px;
+          font-family: monospace;
+          color: #555;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .bottom-nav-label.active { color: #FF6B35; }
+
+        /* ── RESPONSIVE BREAKPOINTS ───────────────────────────── */
+        @media (min-width: 768px) {
+          .nav-bar { padding: 14px 24px; gap: 16px; }
+          .nav-title { font-size: 18px; }
+          .nav-sub { display: block; }
+          .layout { height: calc(100vh - 53px); }
+          .overview-hero { padding: 48px 40px 40px; }
+          .overview-title { font-size: 38px; }
+          .overview-subtitle { font-size: 15px; }
+          .stat-value { font-size: 28px; }
+          .modules-grid {
+            padding: 32px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+          }
+          .lesson-header { padding: 32px 40px 24px; }
+          .lesson-big-title { font-size: 26px; }
+          .lesson-body { padding: 32px 40px 40px; max-width: 720px; }
+          .lesson-body p { font-size: 15px; }
+          .lesson-footer { padding: 24px 40px; gap: 12px; }
+          .btn { min-height: auto; }
+          .btn-primary { flex: none; }
+        }
+
+        @media (max-width: 767px) {
+          .sidebar { display: none; }
+          .nav-hamburger { display: flex; align-items: center; }
+          .progress-label { display: none; }
+          .bottom-nav { display: block; }
+          .main-content { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+          .layout { height: calc(100vh - 49px); }
         }
       `}</style>
 
-      {/* Nav */}
+      {/* ── MOBILE DRAWER ── */}
+      <div className={`drawer-overlay ${drawerOpen ? "open" : ""}`} onClick={() => setDrawerOpen(false)}>
+        <div className={`drawer-panel ${drawerOpen ? "open" : ""}`} onClick={e => e.stopPropagation()}>
+          <div className="drawer-close">
+            <span className="drawer-close-label">Course Contents</span>
+            <button className="drawer-close-btn" onClick={() => setDrawerOpen(false)}>✕</button>
+          </div>
+          <SidebarContents onLessonClick={openLessonMobile} />
+        </div>
+      </div>
+
+      {/* ── NAV ── */}
       <div className="nav-bar">
-        <div>
-          <div className="nav-title">🦞 OpenClaw Masterclass</div>
+        <button className="nav-hamburger" onClick={() => setDrawerOpen(true)}>☰</button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="nav-title">🦞 OpenClaw</div>
           <div className="nav-sub">{COURSE_DATA.totalMinutes} min · {totalLessons} lessons</div>
-          {onBack && <button onClick={onBack} style={{background:"none",border:"1px solid #2a2a2a",color:"#666",padding:"6px 14px",borderRadius:2,fontFamily:"monospace",fontSize:11,cursor:"pointer",letterSpacing:1}}>← Back</button>}
         </div>
         <div className="progress-bar-outer">
           <div className="progress-bar-inner" style={{ width: `${progressPct}%` }} />
         </div>
-        <div className="progress-label">{totalCompleted}/{totalLessons} done · {progressPct}%</div>
+        <div className="progress-label">{totalCompleted}/{totalLessons} · {progressPct}%</div>
+        {onBack && (
+          <button onClick={onBack} style={{
+            background: "none", border: "1px solid #2a2a2a", color: "#666",
+            padding: "6px 12px", borderRadius: 2, fontFamily: "monospace",
+            fontSize: 11, cursor: "pointer", flexShrink: 0,
+          }}>← Back</button>
+        )}
       </div>
 
+      {/* ── LAYOUT ── */}
       <div className="layout">
-        {/* Sidebar */}
+        {/* Desktop sidebar */}
         <div className="sidebar">
-          <button className="sidebar-overview-btn" onClick={() => setView("overview")}>
-            ← Overview
-          </button>
-          {COURSE_DATA.modules.map((mod, mIdx) => (
-            <div key={mod.id}>
-              <div className="module-header">
-                <div className="module-label">
-                  <div className="module-dot" style={{ background: mod.color }} />
-                  <div className="module-name">{mod.emoji} {mod.title}</div>
-                </div>
-                <div className="module-meta">{mod.duration} min · {mod.lessons.length} lessons</div>
-              </div>
-              {mod.lessons.map((lesson, lIdx) => {
-                const key = getLessonKey(mIdx, lIdx);
-                const isActive = view === "lesson" && activeModule === mIdx && activeLesson === lIdx;
-                const isDone = completedLessons.has(key);
-                return (
-                  <button
-                    key={lIdx}
-                    className={`lesson-btn ${isActive ? "active" : ""}`}
-                    onClick={() => openLesson(mIdx, lIdx)}
-                  >
-                    <div className={`lesson-icon ${isDone ? "done" : isActive ? "current" : "todo"}`}>
-                      {isDone ? "✓" : isActive ? "▶" : lIdx + 1}
-                    </div>
-                    <div className={`lesson-title-text ${isActive ? "active" : ""}`}>{lesson.title}</div>
-                    <div className="lesson-duration">{lesson.duration}m</div>
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+          <SidebarContents onLessonClick={openLesson} />
         </div>
 
-        {/* Main */}
+        {/* Main content */}
         <div className="main-content" ref={contentRef}>
           {view === "overview" ? (
             <>
@@ -1258,55 +1557,78 @@ export default function Course({ onBack }) {
                 <div className="overview-title">Maximize OpenClaw</div>
                 <div className="overview-subtitle">A complete 1.5-hour guide from setup to power-user mastery</div>
                 <div className="overview-stats">
-                  <div className="stat-item">
-                    <div className="stat-value">{COURSE_DATA.totalMinutes}</div>
-                    <div className="stat-label">Minutes</div>
-                  </div>
-                  <div className="stat-item">
-                    <div className="stat-value">{COURSE_DATA.modules.length}</div>
-                    <div className="stat-label">Modules</div>
-                  </div>
-                  <div className="stat-item">
-                    <div className="stat-value">{totalLessons}</div>
-                    <div className="stat-label">Lessons</div>
-                  </div>
-                  <div className="stat-item">
-                    <div className="stat-value">{progressPct}%</div>
-                    <div className="stat-label">Complete</div>
-                  </div>
+                  {[
+                    [COURSE_DATA.totalMinutes, "Minutes"],
+                    [COURSE_DATA.modules.length, "Modules"],
+                    [totalLessons, "Lessons"],
+                    [`${progressPct}%`, "Done"],
+                  ].map(([val, label]) => (
+                    <div key={label} className="stat-item">
+                      <div className="stat-value">{val}</div>
+                      <div className="stat-label">{label}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
+
               <div className="modules-grid">
-                {COURSE_DATA.modules.map((mod, mIdx) => (
-                  <div
-                    key={mod.id}
-                    className="module-card"
-                    style={{ borderTopColor: mod.color, borderTopWidth: 3 }}
-                    onClick={() => openLesson(mIdx, 0)}
-                  >
-                    <div className="module-card-emoji">{mod.emoji}</div>
-                    <div className="module-card-title">{mod.title}</div>
-                    <div className="module-card-meta">{mod.duration} min · {mod.lessons.length} lessons</div>
-                    <div className="module-card-lessons">
-                      {mod.lessons.map((l, lIdx) => (
-                        <div
-                          key={lIdx}
-                          className={`module-card-lesson ${isCompleted(mIdx, lIdx) ? "done-lesson" : ""}`}
-                          style={{ borderLeftColor: isCompleted(mIdx, lIdx) ? "#22c55e" : mod.color + "66" }}
-                        >
-                          {l.title}
+                {COURSE_DATA.modules.map((mod, mIdx) => {
+                  const done = mod.lessons.filter((_, lIdx) => isCompleted(mIdx, lIdx)).length;
+                  const pct = Math.round((done / mod.lessons.length) * 100);
+                  const locked = isModuleLocked(mIdx);
+                  return (
+                    <div
+                      key={mod.id}
+                      className="module-card"
+                      style={{ borderTop: `3px solid ${locked ? "#2a2a2a" : mod.color}`, opacity: locked ? 0.7 : 1 }}
+                      onClick={() => openLesson(mIdx, 0)}
+                    >
+                      <div className="module-card-top">
+                        <div className="module-card-emoji">{locked ? "🔒" : mod.emoji}</div>
+                        <div className="module-card-info">
+                          <div className="module-card-title">{mod.title}</div>
+                          <div className="module-card-meta">{locked ? "Premium · " : ""}{mod.duration} min · {mod.lessons.length} lessons</div>
                         </div>
-                      ))}
+                        {!locked && done > 0 && (
+                          <div style={{ fontFamily: "monospace", fontSize: 11, color: "#22c55e" }}>
+                            {done}/{mod.lessons.length}
+                          </div>
+                        )}
+                        {locked && (
+                          <div style={{
+                            fontFamily: "monospace", fontSize: 9,
+                            color: "#FF6B35", border: "1px solid #FF6B3566",
+                            padding: "2px 6px", borderRadius: 2,
+                            letterSpacing: 1, textTransform: "uppercase",
+                          }}>Unlock</div>
+                        )}
+                      </div>
+                      {done > 0 && (
+                        <div className="module-progress-bar">
+                          <div className="module-progress-fill" style={{ width: `${pct}%`, background: mod.color }} />
+                        </div>
+                      )}
+                      <div className="module-card-lessons">
+                        {mod.lessons.map((l, lIdx) => (
+                          <div
+                            key={lIdx}
+                            className={`module-card-lesson ${isCompleted(mIdx, lIdx) ? "done-lesson" : ""}`}
+                            style={{ borderLeftColor: isCompleted(mIdx, lIdx) ? "#22c55e" : mod.color + "55" }}
+                          >
+                            {l.title}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           ) : currentLesson ? (
             <>
               <div className="lesson-header">
                 <div className="lesson-breadcrumb">
-                  Module {activeModule + 1} · {currentModule.emoji} {currentModule.title}
+                  Module {activeModule + 1} of {COURSE_DATA.modules.length} · {currentModule.emoji} {currentModule.title}
                 </div>
                 <div className="lesson-big-title">{currentLesson.title}</div>
                 <div className="lesson-meta-row">
@@ -1318,38 +1640,64 @@ export default function Course({ onBack }) {
                   </span>
                   <span>🕐 {currentLesson.duration} min</span>
                   {isCompleted(activeModule, activeLesson) && (
-                    <span style={{ color: "#22c55e" }}>✓ Completed</span>
+                    <span style={{ color: "#22c55e" }}>✓ Done</span>
                   )}
                 </div>
               </div>
+
+              {activeLesson === 0 && (
+                <div style={{ padding: "16px 16px 0" }}>
+                  <VideoPlayer moduleId={currentModule.id} color={currentModule.color} />
+                </div>
+              )}
+
               <div
                 className="lesson-body"
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(currentLesson.content) }}
               />
+
               <div className="lesson-footer">
-                <button
-                  className="btn btn-primary"
-                  onClick={nextLesson}
-                >
+                <button className="btn btn-primary" onClick={nextLesson}>
                   {activeModule === COURSE_DATA.modules.length - 1 &&
                    activeLesson === currentModule.lessons.length - 1
                     ? "Complete Course ✓"
-                    : "Mark Complete & Continue →"}
+                    : "Complete & Continue →"}
                 </button>
                 {!isCompleted(activeModule, activeLesson) && (
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => markComplete(activeModule, activeLesson)}
-                  >
-                    Mark Complete
+                  <button className="btn btn-secondary" onClick={() => markComplete(activeModule, activeLesson)}>
+                    ✓ Done
                   </button>
                 )}
-                <button className="btn btn-back" onClick={() => setView("overview")}>
-                  ↩ Overview
-                </button>
+                <button className="btn btn-back" onClick={() => setView("overview")}>⊞</button>
               </div>
             </>
           ) : null}
+        </div>
+      </div>
+
+      {/* ── MOBILE BOTTOM NAV ── */}
+      <div className="bottom-nav">
+        <div className="bottom-nav-inner">
+          <button className="bottom-nav-btn" onClick={() => setView("overview")}>
+            <span className="bottom-nav-icon">⊞</span>
+            <span className={`bottom-nav-label ${view === "overview" ? "active" : ""}`}>Modules</span>
+          </button>
+          <button className="bottom-nav-btn" onClick={() => setDrawerOpen(true)}>
+            <span className="bottom-nav-icon">☰</span>
+            <span className="bottom-nav-label">Contents</span>
+          </button>
+          {view === "lesson" && (
+            <button className="bottom-nav-btn" onClick={nextLesson}>
+              <span className="bottom-nav-icon">▶</span>
+              <span className="bottom-nav-label active">Next</span>
+            </button>
+          )}
+          <button className="bottom-nav-btn" onClick={() => {}}>
+            <span className="bottom-nav-icon" style={{ fontFamily: "monospace", fontSize: 14, color: progressPct === 100 ? "#22c55e" : "#666" }}>
+              {progressPct}%
+            </span>
+            <span className="bottom-nav-label">Progress</span>
+          </button>
         </div>
       </div>
     </div>
