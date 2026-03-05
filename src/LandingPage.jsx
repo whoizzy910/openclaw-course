@@ -441,7 +441,7 @@ export default function LandingPage({ onEnter }) {
         <div className="hero-content">
           <div className="hero-tag">
             <span className="hero-lobster">🦞</span>
-            Free · 90 Minutes · Self-Paced
+            Module 1 Free · Full Access $29 · Self-Paced
           </div>
           <h1 className="hero-title">
             <span className="hero-title-accent">Maximize</span><br />
@@ -456,15 +456,15 @@ export default function LandingPage({ onEnter }) {
             </div>
             <div className="hero-stat">
               <div className="hero-stat-val">8</div>
-              <div className="hero-stat-label">Modules</div>
+              <div className="hero-stat-label">Videos</div>
             </div>
             <div className="hero-stat">
               <div className="hero-stat-val">24</div>
               <div className="hero-stat-label">Lessons</div>
             </div>
             <div className="hero-stat">
-              <div className="hero-stat-val">0</div>
-              <div className="hero-stat-label">Cost</div>
+              <div className="hero-stat-val">$29</div>
+              <div className="hero-stat-label">Full Access</div>
             </div>
           </div>
 
@@ -579,7 +579,7 @@ export default function LandingPage({ onEnter }) {
         <div className="bottom-cta-content">
           <span className="bottom-lobster">🦞</span>
           <h2 className="bottom-title">Ready to build<br />your agent?</h2>
-          <p className="bottom-sub">90 minutes · 8 modules · completely free</p>
+          <p className="bottom-sub">90 minutes · 8 modules · Module 1 free</p>
           <button className="cta-primary" onClick={onEnter} style={{ margin: "0 auto" }}>
             Start the Course →
           </button>
@@ -588,7 +588,7 @@ export default function LandingPage({ onEnter }) {
 
       <footer>
         <div className="footer-logo">🦞 OpenClaw Course</div>
-        <div className="footer-text">Built with Claude · Free forever</div>
+        <div className="footer-text">Built with Claude · Module 1 free · Full access $29</div>
       </footer>
     </div>
   );
