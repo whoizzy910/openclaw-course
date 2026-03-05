@@ -83,7 +83,7 @@ function VideoPlayer({ moduleId, color }) {
       border: `1px solid ${color}33`,
     }}>
       <iframe
-        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&color=white`}
+        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&color=white&origin=https://learnclaw.org`}
         title="Module video"
         frameBorder="0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
